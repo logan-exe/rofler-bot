@@ -6,6 +6,7 @@ const pinataSecretApiKey = process.env.PINATA_SECRET_KEY;
 var Twit = require("twit");
 var { TwitterApi } = require("twitter-api-v2");
 const { ethers } = require("ethers");
+var cron = require("node-cron");
 
 const Web3 = require("web3");
 const fs = require("fs");
@@ -183,183 +184,7 @@ exports.createMetaData = async (req, res, next) => {
 };
 
 exports.createNFT = async (req, res) => {
-  async function retweetBot() {
-    console.log("inside sample");
-    const searchTweetUrl = "https://api.twitter.com/2/tweets/search/recent";
-    const tweetDataUrl = "https://api.twitter.com/2/tweets";
-    const currentTime = getFormattedDate();
-    console.log(currentTime);
-
-    // res.send("success");
-
-    const params = {
-      query: "#mintWithRofler -is:retweet",
-      "tweet.fields": "author_id,created_at,attachments",
-      start_time: currentTime,
-      expansions: "attachments.media_keys",
-      "media.fields": "preview_image_url,public_metrics,type,url,width",
-      max_results: 50,
-    };
-
-    const response = await needle("get", searchTweetUrl, params, {
-      headers: {
-        "User-Agent": "v2RecentSearchJS",
-        authorization: `Bearer ${token}`,
-      },
-    });
-
-    // console.log(response.body);
-
-    console.log(response.body, "this is response!");
-
-    if (response.body.meta.result_count == 0) {
-      return;
-    }
-    const tweetList = response.body.data;
-
-    tweetList.forEach(async (data) => {
-      //   await rwClient.v2.retweet("1590745443012591616", data.id);
-
-      const tweetParams = {
-        ids: data.id,
-        "tweet.fields": "author_id,created_at,attachments",
-        expansions: "attachments.media_keys",
-        "media.fields": "preview_image_url,public_metrics,type,url,width",
-      };
-
-      const eachTweetData = await needle("get", tweetDataUrl, tweetParams, {
-        headers: {
-          "User-Agent": "v2RecentSearchJS",
-          authorization: `Bearer ${token}`,
-        },
-      });
-
-      console.log(eachTweetData.body, "this is each tweet data");
-
-      const imageUrl = eachTweetData.body.includes.media[0].url;
-      const testArray = eachTweetData.body.data[0].text.split(":");
-
-      console.log(imageUrl, "image url");
-
-      console.log(testArray, "test Array");
-
-      let walletAddress;
-      let nftName;
-      let nftDescription;
-      //   const walletAddress = testArray[0].substring(0, 43);
-
-      for (let i = 0; i < testArray.length - 1; i++) {
-        if (testArray[i] === "walletAddress") {
-          walletAddress = testArray[i + 1];
-
-          let start;
-
-          for (let i = 0; i < walletAddress.length; i++) {
-            if (walletAddress[i] == "0") {
-              start = i;
-              break;
-            }
-          }
-          walletAddress = walletAddress.substring(start, 43);
-        }
-        if (testArray[i] === "name") {
-          nftName = testArray[i + 1];
-        }
-
-        if (testArray[i] === "description") {
-          nftDescription = testArray[i + 1];
-        }
-      }
-
-      const imageNameArray = imageUrl.split("/");
-      const imageName = imageNameArray[imageNameArray.length - 1];
-
-      const imagePath = path.resolve(__dirname, "public", imageName);
-
-      const writer = fs.createWriteStream(imagePath);
-
-      const response = await axios({
-        url: imageUrl,
-        method: "GET",
-        responseType: "stream",
-      });
-
-      response.data.pipe(writer);
-
-      const d = new Promise((resolve, reject) => {
-        writer.on("finish", resolve);
-        writer.on("error", reject);
-      });
-
-      //pushToIPFSusing PINATA
-
-      //createMetadata
-      const imageHash = await pinFileToIPFS(
-        `./controllers/public/${imageName}`
-      );
-
-      console.log("this is imageHash", imageHash);
-
-      ciqlJson
-        .open("./data.json")
-        .set("image", `https://ipfs.io/ipfs/${imageHash}`)
-        .set("name", nftName)
-        .set("by", walletAddress)
-        .set("description", nftDescription)
-        .set("hash", imageHash)
-        .set("cover", "")
-        .set("type", "")
-        .save();
-
-      const metaDataHash = await pinDataToIPFS();
-
-      const metaDataURI = `https://ipfs.io/ipfs/${metaDataHash}`;
-
-      fs.unlink(imagePath, (err) => {
-        if (err) {
-          console.log(err, "error");
-          return;
-        }
-      });
-
-      //mintNFT
-      const contract = new ethers.Contract(
-        contractAddress,
-        contractAbi,
-        provider
-      );
-
-      let privateKey = process.env.PRIVATE_KEY;
-      let wallet = new ethers.Wallet(privateKey, provider);
-
-      let contractWithSigner = contract.connect(wallet);
-
-      // Set a new Value, which returns the transaction
-      let tx = await contractWithSigner.safeMint(walletAddress, metaDataURI);
-
-      // See: https://ropsten.etherscan.io/tx/0xaf0068dcf728afa5accd02172867627da4e6f946dfb8174a7be31f01b11d5364
-      console.log(tx.hash, "this is thash");
-      // "0xaf0068dcf728afa5accd02172867627da4e6f946dfb8174a7be31f01b11d5364"
-
-      // The operation is NOT complete yet; we must wait until it is mined
-      await tx.wait();
-
-      //reply tweet
-
-      const replyTweet = await rwClient.v2.reply(
-        `We have Minted your #nft on @shardeum ! IPFS: ${metaDataURI} tx: https://explorer-liberty20.shardeum.org/transaction/${tx.hash} `,
-        data.id
-      );
-
-      console.log("replied to tweet!");
-    });
-  }
-
   retweetBot();
-  setInterval(async () => {
-    console.log("inside here!!");
-    retweetBot();
-  }, 240000);
 
   //   console.log(response.body);
   //   if (respo.body) {
@@ -369,41 +194,179 @@ exports.createNFT = async (req, res) => {
   //   }
 };
 
-// app.get("/ok", async (req, res) => {
-//   const bc = await provider.getBlockNumber();
-//   let balance = await provider.getBalance(
-//     "0x407d73d8a49eeb85d32cf465507dd71d507100c1"
-//   );
+async function retweetBot() {
+  console.log("inside sample");
+  const searchTweetUrl = "https://api.twitter.com/2/tweets/search/recent";
+  const tweetDataUrl = "https://api.twitter.com/2/tweets";
+  const currentTime = getFormattedDate();
+  console.log(currentTime);
 
-//   const contract = new ethers.Contract(address, abi, provider);
+  // res.send("success");
 
-//   let symbol = await contract.symbol();
-//   let myAddress = await signer.getAddress();
-//   console.log(myAddress, ethers.utils.formatEther(balance));
-//   let privateKey =
-//     "ffe310874688419d5edb6933a09df8a6fb58b886ba82c9c5d768e5754a677dce";
-//   let wallet = new ethers.Wallet(privateKey, provider);
+  const params = {
+    query: "#mintWithRofler -is:retweet",
+    "tweet.fields": "author_id,created_at,attachments",
+    start_time: currentTime,
+    expansions: "attachments.media_keys",
+    "media.fields": "preview_image_url,public_metrics,type,url,width",
+    max_results: 50,
+  };
 
-//   let userWalletAddres = "0x9b45d32e89de016319a32ccb281e3915b2114f53";
+  const response = await needle("get", searchTweetUrl, params, {
+    headers: {
+      "User-Agent": "v2RecentSearchJS",
+      authorization: `Bearer ${token}`,
+    },
+  });
 
-//   // Create a new instance of the Contract with a Signer, which allows
-//   // update methods
-//   let contractWithSigner = contract.connect(wallet);
-//   // ... OR ...
-//   // let contractWithSigner = new Contract(contractAddress, abi, wallet)
+  // console.log(response.body);
 
-//   // Set a new Value, which returns the transaction
-//   let tx = await contractWithSigner.safeMint(
-//     userWalletAddres,
-//     "https://rofler.in"
-//   );
+  console.log(response.body, "this is response!");
 
-//   // See: https://ropsten.etherscan.io/tx/0xaf0068dcf728afa5accd02172867627da4e6f946dfb8174a7be31f01b11d5364
-//   console.log(tx.hash);
-//   // "0xaf0068dcf728afa5accd02172867627da4e6f946dfb8174a7be31f01b11d5364"
+  if (response.body.meta.result_count == 0) {
+    return;
+  }
+  const tweetList = response.body.data;
 
-//   // The operation is NOT complete yet; we must wait until it is mined
-//   const txDetails = await tx.wait();
+  tweetList.forEach(async (data) => {
+    //   await rwClient.v2.retweet("1590745443012591616", data.id);
 
-//   console.log(txDetails);
-// });
+    const tweetParams = {
+      ids: data.id,
+      "tweet.fields": "author_id,created_at,attachments",
+      expansions: "attachments.media_keys",
+      "media.fields": "preview_image_url,public_metrics,type,url,width",
+    };
+
+    const eachTweetData = await needle("get", tweetDataUrl, tweetParams, {
+      headers: {
+        "User-Agent": "v2RecentSearchJS",
+        authorization: `Bearer ${token}`,
+      },
+    });
+
+    console.log(eachTweetData.body, "this is each tweet data");
+
+    const imageUrl = eachTweetData.body.includes.media[0].url;
+    const testArray = eachTweetData.body.data[0].text.split(":");
+
+    console.log(imageUrl, "image url");
+
+    console.log(testArray, "test Array");
+
+    let walletAddress;
+    let nftName;
+    let nftDescription;
+    //   const walletAddress = testArray[0].substring(0, 43);
+
+    for (let i = 0; i < testArray.length - 1; i++) {
+      if (testArray[i] === "walletAddress") {
+        walletAddress = testArray[i + 1];
+
+        let start;
+
+        for (let i = 0; i < walletAddress.length; i++) {
+          if (walletAddress[i] == "0") {
+            start = i;
+            break;
+          }
+        }
+        walletAddress = walletAddress.substring(start, 43);
+      }
+      if (testArray[i] === "name") {
+        nftName = testArray[i + 1];
+      }
+
+      if (testArray[i] === "description") {
+        nftDescription = testArray[i + 1];
+      }
+    }
+
+    const imageNameArray = imageUrl.split("/");
+    const imageName = imageNameArray[imageNameArray.length - 1];
+
+    const imagePath = path.resolve(__dirname, "public", imageName);
+
+    const writer = fs.createWriteStream(imagePath);
+
+    const response = await axios({
+      url: imageUrl,
+      method: "GET",
+      responseType: "stream",
+    });
+
+    response.data.pipe(writer);
+
+    const d = new Promise((resolve, reject) => {
+      writer.on("finish", resolve);
+      writer.on("error", reject);
+    });
+
+    //pushToIPFSusing PINATA
+
+    //createMetadata
+    const imageHash = await pinFileToIPFS(`./controllers/public/${imageName}`);
+
+    console.log("this is imageHash", imageHash);
+
+    ciqlJson
+      .open("./data.json")
+      .set("image", `https://ipfs.io/ipfs/${imageHash}`)
+      .set("name", nftName)
+      .set("by", walletAddress)
+      .set("description", nftDescription)
+      .set("hash", imageHash)
+      .set("cover", "")
+      .set("type", "")
+      .save();
+
+    const metaDataHash = await pinDataToIPFS();
+
+    const metaDataURI = `https://ipfs.io/ipfs/${metaDataHash}`;
+
+    fs.unlink(imagePath, (err) => {
+      if (err) {
+        console.log(err, "error");
+        return;
+      }
+    });
+
+    //mintNFT
+    const contract = new ethers.Contract(
+      contractAddress,
+      contractAbi,
+      provider
+    );
+
+    let privateKey = process.env.PRIVATE_KEY;
+    let wallet = new ethers.Wallet(privateKey, provider);
+
+    let contractWithSigner = contract.connect(wallet);
+
+    // Set a new Value, which returns the transaction
+    let tx = await contractWithSigner.safeMint(walletAddress, metaDataURI);
+
+    // See: https://ropsten.etherscan.io/tx/0xaf0068dcf728afa5accd02172867627da4e6f946dfb8174a7be31f01b11d5364
+    console.log(tx.hash, "this is thash");
+    // "0xaf0068dcf728afa5accd02172867627da4e6f946dfb8174a7be31f01b11d5364"
+
+    // The operation is NOT complete yet; we must wait until it is mined
+    await tx.wait();
+
+    //reply tweet
+
+    const replyTweet = await rwClient.v2.reply(
+      `We have Minted your #nft on @shardeum ! IPFS: ${metaDataURI} tx: https://explorer-liberty20.shardeum.org/transaction/${tx.hash} `,
+      data.id
+    );
+
+    console.log("replied to tweet!");
+  });
+}
+
+var task = cron.schedule("*/4 * * * *", () => {
+  retweetBot();
+  console.log("running a task every 4 minutes");
+});
+
+task.start();
