@@ -151,7 +151,9 @@ app.get("/sample", async (req, res) => {
   // }
 });
 
-app.get("/", (req, res) => {});
+app.get("/", (req, res) => {
+  res.send("hello world!");
+});
 
 app.use((error, req, res, next) => {
   if (req.file) {
