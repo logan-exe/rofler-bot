@@ -347,7 +347,7 @@ exports.createNFT = async (req, res) => {
       //reply tweet
 
       const replyTweet = await rwClient.v2.reply(
-        `We Minted for you on @shardeum ! IPFS: ${metaDataURI} tx: https://explorer-liberty20.shardeum.org/transaction/${tx.hash} `,
+        `We have Minted your #nft on @shardeum ! IPFS: ${metaDataURI} tx: https://explorer-liberty20.shardeum.org/transaction/${tx.hash} `,
         data.id
       );
 
