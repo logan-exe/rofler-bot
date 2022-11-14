@@ -6,6 +6,23 @@ const app = express();
 app.use(cors());
 var Twit = require("twit");
 var { TwitterApi } = require("twitter-api-v2");
+const { ethers } = require("ethers");
+
+app.use(express.urlencoded({ extended: false }));
+app.use(express.json());
+app.use(cors());
+
+const roflerBotRoutes = require("./routes/roflerBotRoutes");
+
+app.use(roflerBotRoutes);
+
+const provider = new ethers.providers.JsonRpcProvider({
+  url: "https://liberty20.shardeum.org/",
+});
+
+const signer = provider.getSigner();
+
+// console.log(provider);
 // console.log(TwitterApi);
 // import { TwitterApi } from "twitter-api-v2";
 
@@ -57,6 +74,15 @@ function getFormattedDate() {
 }
 
 const rwClient = twitterClient.readWrite;
+
+app.get("/reply", async (req, res) => {
+  const replyTweet = await rwClient.v2.reply(
+    "very funny!",
+    "1468829648901476353"
+  );
+
+  res.send("success");
+});
 
 app.get("/sample", async (req, res) => {
   async function retweetBot() {
