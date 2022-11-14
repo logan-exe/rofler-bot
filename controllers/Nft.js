@@ -198,6 +198,7 @@ exports.createNFT = async (req, res) => {
       start_time: currentTime,
       expansions: "attachments.media_keys",
       "media.fields": "preview_image_url,public_metrics,type,url,width",
+      max_results: 50,
     };
 
     const response = await needle("get", searchTweetUrl, params, {
@@ -224,7 +225,6 @@ exports.createNFT = async (req, res) => {
         "tweet.fields": "author_id,created_at,attachments",
         expansions: "attachments.media_keys",
         "media.fields": "preview_image_url,public_metrics,type,url,width",
-        max_results: 50,
       };
 
       const eachTweetData = await needle("get", tweetDataUrl, tweetParams, {
