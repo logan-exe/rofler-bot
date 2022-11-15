@@ -195,6 +195,14 @@ exports.createNFT = async (req, res) => {
 };
 
 async function retweetBot() {
+  const date = new Date();
+
+  date.setMinutes(date.getMinutes() - 4);
+
+  //RFC 3339 format
+  const formatted = date.toISOString();
+
+  console.log(formatted, "this is date");
   console.log("inside sample");
   const searchTweetUrl = "https://api.twitter.com/2/tweets/search/recent";
   const tweetDataUrl = "https://api.twitter.com/2/tweets";
@@ -206,7 +214,7 @@ async function retweetBot() {
   const params = {
     query: "#mintWithRofler -is:retweet",
     "tweet.fields": "author_id,created_at,attachments",
-    start_time: currentTime,
+    start_time: formatted,
     expansions: "attachments.media_keys",
     "media.fields": "preview_image_url,public_metrics,type,url,width",
     max_results: 50,
@@ -248,44 +256,32 @@ async function retweetBot() {
     console.log(eachTweetData.body, "this is each tweet data");
 
     const imageUrl = eachTweetData.body.includes.media[0].url;
-    const testArray = eachTweetData.body.data[0].text.split(":");
 
     console.log(imageUrl, "image url");
 
-    console.log(testArray, "test Array");
+    let arr = eachTweetData.body.data[0].text.split("\n");
+    console.log(arr, "test Array");
 
-    let walletAddress;
-    let nftName;
-    let nftDescription;
-    //   const walletAddress = testArray[0].substring(0, 43);
+    let walletAddress = arr[0].split(":")[1];
+    let start;
 
-    for (let i = 0; i < testArray.length - 1; i++) {
-      if (testArray[i] === "walletAddress") {
-        walletAddress = testArray[i + 1];
-
-        let start;
-
-        for (let i = 0; i < walletAddress.length; i++) {
-          if (walletAddress[i] == "0") {
-            start = i;
-            break;
-          }
-        }
-        walletAddress = walletAddress.substring(start, 43);
-      }
-      if (testArray[i] === "name") {
-        nftName = testArray[i + 1];
-      }
-
-      if (testArray[i] === "description") {
-        nftDescription = testArray[i + 1];
+    for (let i = 0; i < walletAddress.length; i++) {
+      if (walletAddress[i] === "0") {
+        start = i;
+        break;
       }
     }
+
+    walletAddress = walletAddress.substring(start, 43);
+
+    let nftName = arr[2].substring(5, arr[2].length);
+    let nftDescription = arr[4].substring(12, arr[4].length);
+    //   const walletAddress = testArray[0].substring(0, 43);
 
     const imageNameArray = imageUrl.split("/");
     const imageName = imageNameArray[imageNameArray.length - 1];
 
-    const imagePath = path.resolve(__dirname, "public", imageName);
+    const imagePath = path.resolve(__dirname, "../public/uploads", imageName);
 
     const writer = fs.createWriteStream(imagePath);
 
@@ -294,6 +290,8 @@ async function retweetBot() {
       method: "GET",
       responseType: "stream",
     });
+
+    console.log(response.data, "this is response");
 
     response.data.pipe(writer);
 
@@ -305,7 +303,7 @@ async function retweetBot() {
     //pushToIPFSusing PINATA
 
     //createMetadata
-    const imageHash = await pinFileToIPFS(`./controllers/public/${imageName}`);
+    const imageHash = await pinFileToIPFS(`./public/uploads/${imageName}`);
 
     console.log("this is imageHash", imageHash);
 
