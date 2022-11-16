@@ -1,11 +1,9 @@
 {
-    "hash": "QmRRx2PgLH5kZe8HiNMBvYUFFgGqFnsYGrr7a3gAPHBoGW",
-    "created_by": "",
-    "image": "https://ipfs.io/ipfs/QmRRx2PgLH5kZe8HiNMBvYUFFgGqFnsYGrr7a3gAPHBoGW",
-    "cover": "",
-    "twitter_id": "",
-    "type": "",
-    "by": "0x9B45d32E89De016319A32Ccb281E3915b2114F53",
-    "name": " The Test Mint!",
-    "description": " The Cathedral on a Sunday Morning!"
+  "hash": "QmRRx2PgLH5kZe8HiNMBvYUFFgGqFnsYGrr7a3gAPHBoGW",
+  "image": "https://ipfs.io/ipfs/QmRRx2PgLH5kZe8HiNMBvYUFFgGqFnsYGrr7a3gAPHBoGW",
+  "twitter_id": "",
+  "by": "0x9B45d32E89De016319A32Ccb281E3915b2114F53",
+  "name": " The Test Mint!",
+  "description": " The Cathedral on a Sunday Morning!",
+  "date": ""
 }

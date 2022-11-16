@@ -314,8 +314,8 @@ async function retweetBot() {
       .set("by", walletAddress)
       .set("description", nftDescription)
       .set("hash", imageHash)
-      .set("cover", "")
-      .set("type", "")
+      .set("twitter_id", data.id)
+      .set("date", formatted)
       .save();
 
     const metaDataHash = await pinDataToIPFS();
@@ -354,7 +354,7 @@ async function retweetBot() {
     //reply tweet
 
     const replyTweet = await rwClient.v2.reply(
-      `We have Minted your #nft on @shardeum ! IPFS: ${metaDataURI} tx: https://explorer-liberty20.shardeum.org/transaction/${tx.hash} `,
+      `We have minted your #nft on @shardeum ! IPFS: ${metaDataURI} tx: https://explorer-liberty20.shardeum.org/transaction/${tx.hash} `,
       data.id
     );
 
@@ -367,4 +367,4 @@ var task = cron.schedule("*/4 * * * *", () => {
   console.log("running a task every 4 minutes");
 });
 
-// task.start();
+task.start();
