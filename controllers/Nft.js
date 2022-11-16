@@ -212,7 +212,7 @@ async function retweetBot() {
   // res.send("success");
 
   const params = {
-    query: "#mintWithRofler -is:retweet",
+    query: "#mintWithRofler -is:retweet -is:reply",
     "tweet.fields": "author_id,created_at,attachments",
     start_time: formatted,
     expansions: "attachments.media_keys",
@@ -254,6 +254,10 @@ async function retweetBot() {
     });
 
     console.log(eachTweetData.body, "this is each tweet data");
+
+    if (eachTweetData.body.includes === undefined) {
+      return;
+    }
 
     const imageUrl = eachTweetData.body.includes.media[0].url;
 
