@@ -36,19 +36,19 @@ const { exec } = require("child_process");
 const { log } = require("console");
 
 const twitterClient = new TwitterApi({
-  appKey: process.env.API_KEY,
-  appSecret: process.env.API_SECRET,
-  accessToken: process.env.ACCESS_TOKEN,
-  accessSecret: process.env.ACCESS_TOKEN_SECRET,
+  appKey: process.env.ARUN_API_KEY,
+  appSecret: process.env.ARUN_API_SECRET,
+  accessToken: process.env.ARUN_ACCESS_TOKEN,
+  accessSecret: process.env.ARUN_ACCESS_TOKEN_SECRET,
 });
 
 const rwClient = twitterClient.readWrite;
 
 var T = new Twit({
-  consumer_key: process.env.API_KEY,
-  consumer_secret: process.env.API_SECRET,
-  access_token: process.env.ACCESS_TOKEN,
-  access_token_secret: process.env.ACCESS_TOKEN_SECRET,
+  consumer_key: process.env.ARUN_API_KEY,
+  consumer_secret: process.env.ARUN_API_SECRET,
+  access_token: process.env.ARUN_ACCESS_TOKEN,
+  access_token_secret: process.env.ARUN_ACCESS_TOKEN_SECRET,
   timeout_ms: 60 * 1000, // optional HTTP request timeout to apply to all requests.
 });
 
@@ -369,8 +369,55 @@ async function retweetBot() {
   });
 }
 
+////Personal twitter Bot
+async function personalBot() {
+  const date = new Date();
+
+  date.setMinutes(date.getMinutes() - 4);
+
+  //RFC 3339 format
+  const formatted = date.toISOString();
+
+  console.log(formatted, "this is date");
+  console.log("inside sample");
+  const searchTweetUrl = "https://api.twitter.com/2/tweets/search/recent";
+  const tweetDataUrl = "https://api.twitter.com/2/tweets";
+  const currentTime = getFormattedDate();
+  console.log(currentTime);
+
+  // res.send("success");
+
+  const params = {
+    query: "#javascript OR #shardeum OR #web3 -is:retweet -is:reply",
+    "tweet.fields": "author_id,created_at,attachments",
+    start_time: formatted,
+    expansions: "attachments.media_keys",
+    "media.fields": "preview_image_url,public_metrics,type,url,width",
+    max_results: 10,
+  };
+
+  const response = await needle("get", searchTweetUrl, params, {
+    headers: {
+      "User-Agent": "v2RecentSearchJS",
+      authorization: `Bearer ${token}`,
+    },
+  });
+
+  // console.log(response.body);
+
+  console.log(response.body, "this is response!");
+
+  if (response.body.meta.result_count == 0) {
+    return;
+  }
+  const tweetList = response.body.data;
+  tweetList.forEach(async (data) => {
+    await rwClient.v2.like("1390030668256595973", data.id);
+  });
+}
+
 var task = cron.schedule("*/4 * * * *", () => {
-  retweetBot();
+  personalBot();
   console.log("running a task every 4 minutes");
 });
 

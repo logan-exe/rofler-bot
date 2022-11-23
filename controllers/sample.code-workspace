@@ -1,0 +1,23 @@
+{
+  "folders": [
+	{
+		"path": "../../hueproject/CITROYALMARKET"
+	},
+	{
+		"path": "../../../Company/hueproject/cit-market-place"
+	},
+	{
+		"path": "../../../Metafelo/felonft"
+	},
+	{
+		"path": "../../../Company/hueproject/cit-backend"
+	},
+	{
+		"path": "../../../Metafelo/Brute/brutenft-backend"
+	},
+	{
+		"path": ".."
+	}
+],
+  "settings": {}
+}
